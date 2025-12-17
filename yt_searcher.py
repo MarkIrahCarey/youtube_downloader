@@ -5,7 +5,6 @@ import subprocess
 
 def get_ffmpeg_location():
     system = platform.system()
-
     base = os.path.join(os.path.dirname(__file__), "ffmpeg")
 
     if system == "Darwin":
@@ -15,7 +14,7 @@ def get_ffmpeg_location():
     elif system == "Linux":
         return os.path.join(base, "linux")
     else:
-        return None
+        raise RuntimeError("Unsupported OS")
     
 def search_youtube(query, max_results=10):
     # Search YouTube and return the first result's info.
@@ -112,24 +111,23 @@ def download_video(url_link, title, output_dir=None):
 
     # once successful, we need to convert the video into something compatable for all devices.
     # this is done through ffprobe and ffmpeg
+    
     print("Converting")
     if os.path.exists(f'{output_path}.mp4'):   
         print("Start Conversion")
         new_output_path = f"{output_dir}/{safe_title}"
-        command = [
-            'ffmpeg',
-            '-i', f'{output_path}.mp4',
 
+
+        command = [
+            f'{get_ffmpeg_location()}/ffmpeg.exe',
+            '-i', f'{output_path}.mp4',
             '-c:v', 'libx264',
             '-pix_fmt', 'yuv420p',
             '-preset', 'veryfast',
             '-crf', '23',
-
             '-c:a', 'aac',
             '-b:a', '128k',
-
             '-movflags', '+faststart',
-
             f'{new_output_path}_fixed.mp4',
             '-y'
         ]
