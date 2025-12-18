@@ -1,10 +1,12 @@
 import tkinter as tk
-from PIL import Image, ImageTk
+from PIL import Image, ImageTk, ImageOps
 from yt_searcher import yt_search
 import requests
 from io import BytesIO
 import os
 
+triton_green = "#046A38"
+accent_green = "#358D84"
 # we will create a main class for the GUI of this app
 class App(tk.Tk):
 
@@ -12,7 +14,7 @@ class App(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Youtube Search App by MarkIraCarey")
-        self.geometry("612x1104")
+        self.geometry("632x1104")
         
         # Container frame to hold all pages
         container = tk.Frame(self)
@@ -27,6 +29,7 @@ class App(tk.Tk):
         for PageClass in (HomePage, AboutPage, SearchPage, DownloadsPage):
             page_name = PageClass.__name__
             frame = PageClass(parent=container, controller=self)
+            frame.configure(bg = triton_green)
             self.frames[page_name] = frame
             frame.grid(row=0, column=0, sticky="nsew")
         
@@ -59,6 +62,7 @@ class HomePage(tk.Frame):
         # Main Content
         content_frame = tk.Frame(self)
         content_frame.grid(row=1, column=0, sticky="nsew", padx=10, pady=10)
+        content_frame.configure(bg = triton_green)
 
         # title and background color
         tk.Label(content_frame, text="Welcome", 
@@ -85,6 +89,7 @@ class AboutPage(tk.Frame):
         super().__init__(parent)
 
         self = tk.Frame(self)
+        self.configure(bg = triton_green)
         self.grid(row=1, column=0, sticky="nsew", padx=1, pady=1)
 
         description = """
@@ -102,14 +107,14 @@ class AboutPage(tk.Frame):
         """
 
         # Simple about page content
-        tk.Label(self, text="About This App", 
+        tk.Label(self, text="About This App", bg = triton_green, 
                 font=("Arial", 48, "bold")).pack(pady=50)
         
-        tk.Label(self, text=description, 
+        tk.Label(self, text=description, bg = triton_green, 
                 font=("Arial", 24)).pack(pady=10)
         
         # Back button
-        back_btn = tk.Button(self, text="← Back to Home",
+        back_btn = tk.Button(self, text="Back to Home",
                            font=("Arial", 20),
                            command=lambda: controller.show_frame("HomePage"))
         back_btn.pack(pady=20)
@@ -121,6 +126,7 @@ class SearchPage(tk.Frame):
 
         self = tk.Frame(self)
         self.pack(expand=True, fill="both")
+        self.configure(bg = triton_green)
         self.grid_rowconfigure(0, weight=0)   
         self.grid_rowconfigure(1, weight=1)  
         self.grid_rowconfigure(2, weight=0)   
@@ -141,7 +147,7 @@ class SearchPage(tk.Frame):
             # then append the results
             update_search(searcher.get_results())
             
-        
+        # Search button
         submit_button = tk.Button(self, text="Submit Search", font=("Arial", 20), command=search_video)
         submit_button.pack(pady=10)
 
@@ -209,6 +215,9 @@ class SearchPage(tk.Frame):
                     # keep all images the same size
                     img = img.resize((int(canvasx * 0.95), 315))
 
+                    # add a border to the photo
+                    img = ImageOps.expand(img, border=2, fill=accent_green)
+
                     # convert to PhotoImage for tkinter
                     photo = ImageTk.PhotoImage(img)
                     
@@ -218,7 +227,7 @@ class SearchPage(tk.Frame):
                     # add text below it
                     texts = " | " + channel + " | "
                     if len(title) > 40:
-                        texts += title[0:50] + "..."
+                        texts += title[0:40] + "..."
                     else:
                         texts += title
 

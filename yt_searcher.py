@@ -117,9 +117,15 @@ def download_video(url_link, title, output_dir=None):
         print("Start Conversion")
         new_output_path = f"{output_dir}/{safe_title}"
 
+        ffmpeg_directory = ""
+        
+        if platform.system() == "Darwin":
+            ffmpeg_directory = f"{get_ffmpeg_location()}/ffmpeg"
+        elif platform.system() == "Windows":
+            ffmpeg_directory = f'{get_ffmpeg_location()}/ffmpeg.exe'
 
         command = [
-            f'{get_ffmpeg_location()}/ffmpeg.exe',
+            ffmpeg_directory,
             '-i', f'{output_path}.mp4',
             '-c:v', 'libx264',
             '-pix_fmt', 'yuv420p',
