@@ -21,7 +21,7 @@ https://github.com/yt-dlp/yt-dlp
 
 **or if you are in windows, this should also work**
 
-`python -m install Pillow requests, yt-dlp`
+`python -m pip install pillow requests yt-dlp`
 
 ## Other Planned Features
 
