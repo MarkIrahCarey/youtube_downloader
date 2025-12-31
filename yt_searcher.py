@@ -51,11 +51,13 @@ def extract_video_info(data_list):
     # return the list of dictionaries
     return result
 
-def download_audio(url_link, title, output_dir=None):    
+def download_audio(url_link, output_dir=None):    
     try:
         if output_dir == None:
             raise Exception("No Valid Path")
         
+        title = get_video_title(url_link)
+
         output_path = f"{output_dir}/{title}"
 
         # Download audio from a YouTube URL using yt-dlp
@@ -82,13 +84,14 @@ def download_audio(url_link, title, output_dir=None):
         return
     
 
-def download_video(url_link, title, output_dir=None):    
+def download_video(url_link, output_dir=None):    
     try:
         if output_dir == None:
             raise Exception("No Valid Path")
         
+        title = get_video_title(url_link)
         safe_title = "".join(c for c in title if c.isalnum() or c in (' ', '-', '_')).rstrip()
-        output_path = f"{output_dir}/{safe_title}"
+        output_path = f"{output_dir}/{safe_title}_init"
 
         ydl_opts = {
             'ffmpeg_location': get_ffmpeg_location(),
@@ -100,7 +103,7 @@ def download_video(url_link, title, output_dir=None):
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([url_link])
 
-            downloaded_file = f"{output_path}.mp4"
+            downloaded_file = f"{output_path}_init.mp4"
 
     except yt_dlp.utils.DownloadError as e:
         print(f"{e}")
@@ -134,7 +137,7 @@ def download_video(url_link, title, output_dir=None):
             '-c:a', 'aac',
             '-b:a', '128k',
             '-movflags', '+faststart',
-            f'{new_output_path}_fixed.mp4',
+            f'{new_output_path}.mp4',
             '-y'
         ]
 
@@ -149,6 +152,21 @@ def download_video(url_link, title, output_dir=None):
 
         # then delete the old one
         os.remove(f"{output_path}.mp4")
+
+
+def get_video_title(url_link):
+    try:
+        ydl_opts = {
+            'quiet': True,
+            'skip_download': True,
+        }
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url_link, download=False)
+            title = info.get('title', 'Unknown_Title')
+            return title
+    except Exception as e:
+        print(f"Error getting title: {e}")
+        return 'Unknown_Title'
 
 
 class yt_search():
@@ -168,9 +186,16 @@ class yt_search():
         return self.results
     
     def download_mp3(self):
-        download_audio(self.url, self.title, self.path)
+        download_audio(self.url, self.path)
 
     def download_mp4(self):
-        download_video(self.url, self.title, self.path)
+        download_video(self.url, self.path)
+
+    def download_link_to_mp3(self):
+        download_audio(self.url, self.path)
+
+    def download_link_to_mp4(self):
+        download_video(self.url, self.path)
+        
 
 
