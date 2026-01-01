@@ -85,29 +85,29 @@ def download_audio(url_link, output_dir=None):
     
 def download_video(url_link, output_dir=None):    
     try:
-        if output_dir is None:
+        if output_dir == None:
             raise Exception("No Valid Path")
         
         title = get_video_title(url_link)
         safe_title = "".join(c for c in title if c.isalnum() or c in (' ', '-', '_')).rstrip()
-        output_path = f"{output_dir}/{safe_title}"
+        output_path = f"{output_dir}/{safe_title}_init"
 
         ydl_opts = {
             'ffmpeg_location': get_ffmpeg_location(),
-            'format': 'bestvideo[ext=mp4][height<=720]+bestaudio[ext=m4a]/best[ext=mp4][height<=720]', 
-            'outtmpl': f'{output_path}.%(ext)s',
+            'format': 'best[ext=mp4][vcodec^=avc1][height<=720]/best[ext=mp4][height<=720]', 
+            'outtmpl': f'{output_path}.%(ext)s',  
             'merge_output_format': 'mp4', 
         }
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([url_link])
-        
-        print(f"✓ Downloaded: {safe_title}.mp4")
-        
+
     except yt_dlp.utils.DownloadError as e:
         print(f"{e}")
+        return
     except Exception as e:
         print(f"{e}")
+        return
 
 def download_playlist(url_link, output_dir=None, audio_only=False):
     try:
@@ -135,17 +135,15 @@ def download_playlist(url_link, output_dir=None, audio_only=False):
                 'preferredquality': '192',
             }]
         else:
-            format_str = 'bestvideo[ext=mp4][height<=720]+bestaudio[ext=m4a]/best[ext=mp4][height<=720]'
+            format_str = 'best[ext=mp4][vcodec^=avc1][height<=720]/best[ext=mp4][height<=720]'
             postprocessors = []
         
         ydl_opts = {
             'ffmpeg_location': get_ffmpeg_location(), 
-            'format': format_str,
+            'format': format_str,  
             'outtmpl': f'{output_dir}/%(playlist_title)s/%(title)s.%(ext)s',
-            'postprocessors': postprocessors,
-            'quiet': False,
-            'ignoreerrors': True,
-            'no_warnings': True,
+            'postprocessors': postprocessors,  
+            'merge_output_format': 'mp4'
         }
         
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
