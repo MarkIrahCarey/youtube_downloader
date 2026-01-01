@@ -33,7 +33,7 @@ class App(tk.Tk):
         self.frames = {}
         
         # Create all pages
-        for PageClass in (HomePage, AboutPage, SearchPage, DownloadsPage, LinkPage):
+        for PageClass in (HomePage, AboutPage, SearchPage, DownloadsPage, LinkPage, PlaylistPage):
             page_name = PageClass.__name__
             frame = PageClass(parent=container, controller=self)
             frame.configure(bg = triton_green)
@@ -98,7 +98,8 @@ class HomePage(tk.Frame):
 
         # add a insert link (playlist) button
         plink_only_btn = tk.Button(content_frame, text="Enter a Link (Playlist)",
-                             font=("Arial", font_size_normal))
+                             font=("Arial", font_size_normal),
+                             command=lambda: controller.show_frame("PlaylistPage"))
         plink_only_btn.pack()
 
 
@@ -457,6 +458,80 @@ class LinkPage(tk.Frame):
                 searcher.download_mp3()
             elif type == "mp4":
                 searcher.download_mp4()
+            
+            self.status_label.config(text="Link accepted!", fg="green")
+            
+            # Clear entry
+            self.url_entry.delete(0, tk.END)
+            
+        except Exception as e:
+            self.status_label.config(text=f"Error: {str(e)}", fg="red")
+
+
+class PlaylistPage(tk.Frame):
+    def __init__(self, parent, controller):
+        super().__init__(parent)
+        self.controller = controller
+        self.configure(bg=triton_green)
+
+        container = tk.Frame(self, bg=triton_green)
+        container.place(relx=0.5, rely=0.5, anchor="center")
+        
+        # Link Entry and stuff
+        tk.Label(container, text="Enter YouTube Playlist Link", 
+                font=("Arial", font_size_large, "bold"),
+                bg=triton_green).pack(pady=(0, 30))
+        
+        # URL Entry and stuf
+        tk.Label(container, text="Paste YouTube Playlist URL:", 
+                font=("Arial", font_size_normal),
+                bg=triton_green).pack()
+        
+        self.url_entry = tk.Entry(container, width=40, 
+                                 font=("Arial", font_size_normal))
+        self.url_entry.pack(pady=10)
+        
+        # Bind Enter key
+        self.url_entry.bind("<Return>", lambda e: self.process_link("mp3"))
+        
+        # Process buttons
+        tk.Button(container, text="Download playlist as mp3", 
+                 font=("Arial", font_size_normal),
+                 command=lambda: self.process_link("mp3")).pack(pady=10)
+        
+        tk.Button(container, text="Download playlist as mp4", 
+                 font=("Arial", font_size_normal),
+                 command=lambda: self.process_link("mp4")).pack(pady=10)
+        
+        # Back button
+        tk.Button(container, text="← Back to Home", 
+                 font=("Arial", font_size_normal),
+                 command=lambda: controller.show_frame("HomePage")).pack(pady=20)
+
+         # Status label
+        self.status_label = tk.Label(container, text="", 
+                                    font=("Arial", 12),
+                                    bg=triton_green)
+        self.status_label.pack(pady=10)
+
+    def process_link(self, type):
+        url = self.url_entry.get().strip()
+        
+        if not url:
+            self.status_label.config(text="Please enter a URL", fg="red")
+            return
+        
+        self.status_label.config(text="Processing...", fg="blue")
+        
+        try:
+            # call on the yt_searcher
+            output_path = os.path.join(os.path.dirname(__file__), "Downloads_ytdlp")
+            searcher = yt_search(url=url, path=output_path)
+
+            if type == "mp3":
+                searcher.download_playlist_link_to_mp3()
+            elif type == "mp4":
+                searcher.download_playlist_link_to_mp4()
             
             self.status_label.config(text="Link accepted!", fg="green")
             

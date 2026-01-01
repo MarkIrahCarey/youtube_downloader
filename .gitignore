@@ -2,3 +2,15 @@
 *.mp4
 *.mp3
 __pycache__/
+.DS_Store
+*.pyc
+*.pyo
+*.pyd
+Downloads_ytdlp/
+*.log
+venv/
+env/
+*.env
+*.bak
+*.tmp
+*.temp

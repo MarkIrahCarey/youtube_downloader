@@ -83,76 +83,76 @@ def download_audio(url_link, output_dir=None):
         print(f"{e}")
         return
     
-
 def download_video(url_link, output_dir=None):    
     try:
-        if output_dir == None:
+        if output_dir is None:
             raise Exception("No Valid Path")
         
         title = get_video_title(url_link)
         safe_title = "".join(c for c in title if c.isalnum() or c in (' ', '-', '_')).rstrip()
-        output_path = f"{output_dir}/{safe_title}_init"
+        output_path = f"{output_dir}/{safe_title}"
 
         ydl_opts = {
             'ffmpeg_location': get_ffmpeg_location(),
             'format': 'bestvideo[ext=mp4][height<=720]+bestaudio[ext=m4a]/best[ext=mp4][height<=720]', 
-            'outtmpl': f'{output_path}', 
+            'outtmpl': f'{output_path}.%(ext)s',
             'merge_output_format': 'mp4', 
         }
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([url_link])
-
-            downloaded_file = f"{output_path}_init.mp4"
-
+        
+        print(f"✓ Downloaded: {safe_title}.mp4")
+        
     except yt_dlp.utils.DownloadError as e:
         print(f"{e}")
-        return
     except Exception as e:
         print(f"{e}")
-        return
 
-    # once successful, we need to convert the video into something compatable for all devices.
-    # this is done through ffprobe and ffmpeg
-    
-    print("Converting")
-    if os.path.exists(f'{output_path}.mp4'):   
-        print("Start Conversion")
-        new_output_path = f"{output_dir}/{safe_title}"
-
-        ffmpeg_directory = ""
+def download_playlist(url_link, output_dir=None, audio_only=False):
+    try:
+        if output_dir is None:
+            raise Exception("No Valid Path")
         
-        if platform.system() == "Darwin":
-            ffmpeg_directory = f"{get_ffmpeg_location()}/ffmpeg"
-        elif platform.system() == "Windows":
-            ffmpeg_directory = f'{get_ffmpeg_location()}/ffmpeg.exe'
+        # check if its a playlist
+        def is_playlist(url):
+            playlist_indicators = [
+                "list=",  
+                "playlist",  
+                "/playlist/",  
+                "&list=" 
+            ]
 
-        command = [
-            ffmpeg_directory,
-            '-i', f'{output_path}.mp4',
-            '-c:v', 'libx264',
-            '-pix_fmt', 'yuv420p',
-            '-preset', 'veryfast',
-            '-crf', '23',
-            '-c:a', 'aac',
-            '-b:a', '128k',
-            '-movflags', '+faststart',
-            f'{new_output_path}.mp4',
-            '-y'
-        ]
+            return any(indicator in url.lower() for indicator in playlist_indicators)
+            
+        if not is_playlist(url_link): raise Exception("Not a playlist")
 
-        try:
-            subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            print(f"Successfully converted {output_path} to {new_output_path}")
-        except subprocess.CalledProcessError as e:
-            print('FFmpeg command failed:')
-            print(e.stderr.decode())
-        except FileNotFoundError:
-            print("FFmpeg executable not found. Make sure it's installed and in your system's PATH.")
-
-        # then delete the old one
-        os.remove(f"{output_path}.mp4")
-
+        if audio_only:
+            format_str = 'bestaudio/best'
+            postprocessors = [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'mp3',
+                'preferredquality': '192',
+            }]
+        else:
+            format_str = 'bestvideo[ext=mp4][height<=720]+bestaudio[ext=m4a]/best[ext=mp4][height<=720]'
+            postprocessors = []
+        
+        ydl_opts = {
+            'ffmpeg_location': get_ffmpeg_location(), 
+            'format': format_str,
+            'outtmpl': f'{output_dir}/%(playlist_title)s/%(title)s.%(ext)s',
+            'postprocessors': postprocessors,
+            'quiet': False,
+            'ignoreerrors': True,
+            'no_warnings': True,
+        }
+        
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            ydl.download([url_link])
+        
+    except Exception as e:
+        print(f"Error: {e}")
 
 def get_video_title(url_link):
     try:
@@ -196,6 +196,14 @@ class yt_search():
 
     def download_link_to_mp4(self):
         download_video(self.url, self.path)
+
+    def download_playlist_link_to_mp3(self):
+        if self.url:
+            download_playlist(self.url, self.path, audio_only=True)
+
+    def download_playlist_link_to_mp4(self):
+        if self.url:
+            download_playlist(self.url, self.path, audio_only=False)
         
 
 
